@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Crepero - POS con Logo y Fecha Local</title>
+    <title>El Crepero - POS con Mesas Actualizadas</title>
     <style>
         * {
             box-sizing: border-box;
@@ -32,6 +32,7 @@
             border-bottom: 2px solid #333;
             height: 60px;
             flex-shrink: 0;
+            z-index: 5;
         }
 
         /* Contenedor y Estilo del Logo */
@@ -46,7 +47,7 @@
             width: auto;
             object-fit: contain;
             border-radius: 6px;
-            background: #fff; /* Fondo blanco sutil para resaltar el logo */
+            background: #fff;
             padding: 2px 6px;
         }
 
@@ -84,11 +85,15 @@
 
         .view.active { display: flex; }
 
-        /* ================= VISTA CROQUIS ================= */
+        /* ================= VISTA CROQUIS CON LOGO DE FONDO ================= */
         #tablesView {
             flex-direction: column;
             padding: 12px;
-            background: #181818;
+            background-color: #181818;
+            background-image: linear-gradient(rgba(24, 24, 24, 0.88), rgba(24, 24, 24, 0.88)), url('logo.png');
+            background-repeat: no-repeat;
+            background-position: center 40%;
+            background-size: 340px auto;
             overflow-y: auto;
             align-items: center;
         }
@@ -111,7 +116,8 @@
         .layout-container {
             width: 100%;
             max-width: 900px;
-            background: #1e1e1e;
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(4px);
             border: 2px dashed #444;
             border-radius: 16px;
             padding: 14px;
@@ -126,7 +132,7 @@
             flex-direction: column;
             gap: 12px;
             justify-content: space-around;
-            background: #181818;
+            background: rgba(24, 24, 24, 0.9);
             padding: 8px;
             border-radius: 12px;
             border: 1px solid #333;
@@ -141,7 +147,7 @@
 
         .stage-zone {
             grid-column: 3;
-            background: #2a2215;
+            background: rgba(42, 34, 21, 0.9);
             border: 2px solid #ff9800;
             border-radius: 12px;
             display: flex;
@@ -158,7 +164,7 @@
 
         .bottom-corridor {
             grid-column: 1 / span 3;
-            background: #181818;
+            background: rgba(24, 24, 24, 0.9);
             border: 1px solid #333;
             border-radius: 12px;
             padding: 10px;
@@ -186,6 +192,7 @@
             justify-content: center;
             cursor: pointer;
             min-height: 85px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
         .table-card:active { transform: scale(0.96); }
@@ -527,9 +534,10 @@
             return localDate.toISOString().split('T')[0];
         }
 
+        // MESAS CONFIGURADAS (SE CAMBIARON BARRA 1 Y BARRA 2 A MESA 1 Y MESA 2)
         const initialTables = [
-            { id: 1, name: 'Barra 1', zone: 'left' },
-            { id: 2, name: 'Barra 2', zone: 'left' },
+            { id: 1, name: 'Mesa 1', zone: 'left' },
+            { id: 2, name: 'Mesa 2', zone: 'left' },
             { id: 3, name: 'Mesa 3', zone: 'center' },
             { id: 4, name: 'Mesa 4', zone: 'center' },
             { id: 5, name: 'Mesa 5', zone: 'center' },
