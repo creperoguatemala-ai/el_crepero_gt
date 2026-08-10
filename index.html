@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Crepero - POS con Fecha Local</title>
+    <title>El Crepero - POS con Logo y Fecha Local</title>
     <style>
         * {
             box-sizing: border-box;
@@ -25,24 +25,30 @@
         /* Header */
         header {
             background-color: #1e1e1e;
-            padding: 10px 16px;
+            padding: 8px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #333;
-            height: 56px;
+            height: 60px;
             flex-shrink: 0;
         }
 
-        .logo {
-            font-size: 1.1rem;
-            font-weight: 900;
-            letter-spacing: 1px;
-            color: #fff;
-            text-transform: uppercase;
+        /* Contenedor y Estilo del Logo */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .logo span { color: #ff9800; }
+        .app-logo {
+            height: 42px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 6px;
+            background: #fff; /* Fondo blanco sutil para resaltar el logo */
+            padding: 2px 6px;
+        }
 
         .header-actions {
             display: flex;
@@ -398,7 +404,9 @@
 <body>
 
     <header>
-        <div class="logo">EL <span>CREPERO</span></div>
+        <div class="logo-container">
+            <img src="logo.png" alt="El Crepero Logo" class="app-logo">
+        </div>
         <div id="activeTableLabel" style="font-weight: bold; color: #ff9800; font-size: 1rem;"></div>
         <div class="header-actions">
             <button id="btnHistoryView" class="header-btn" onclick="showHistoryView()">📋 Historial / Ventas</button>
@@ -511,7 +519,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // FUNCIÓN PARA CALCULAR LA FECHA LOCAL EXACTA (ZONA HORARIA LOCAL)
+        // CALCULAR FECHA LOCAL EXACTA (GUATEMALA / UTC-6)
         function getLocalDateStr() {
             const now = new Date();
             const offset = now.getTimezoneOffset() * 60000;
@@ -538,7 +546,6 @@
         let currentTableId = null;
         let currentCat = 'all';
 
-        // Fecha seleccionada por defecto: Hoy según zona horaria local
         let selectedDateStr = getLocalDateStr();
 
         const menu = [
@@ -586,7 +593,6 @@
             return new Date(isoStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
         }
 
-        // Escuchar Mesas Activas en Tiempo Real
         onValue(ref(db, 'mesas_activas/'), (snapshot) => {
             const data = snapshot.val();
             if (data) { tablesState = data; } 
@@ -595,7 +601,6 @@
             if (currentTableId) updateCartUI();
         });
 
-        // Cargar Ventas según la fecha seleccionada
         window.loadHistoryForDate = function(dateStr) {
             selectedDateStr = dateStr || getLocalDateStr();
             onValue(ref(db, `ventas_diarias/${selectedDateStr}`), (snapshot) => {
@@ -663,7 +668,6 @@
             document.getElementById('btnHistoryView').style.display = 'none';
             document.getElementById('activeTableLabel').innerText = '';
             
-            // Ajustar el picker a la fecha actual si está vacío
             const picker = document.getElementById('historyDatePicker');
             picker.value = selectedDateStr;
             loadHistoryForDate(selectedDateStr);
@@ -837,7 +841,6 @@
             if (confirm(`¿Cobrar y liberar ${tableName}?\nTotal: Q ${total.toFixed(2)}`)) {
                 const orderData = { tableName, startTime: state.startTime, endTime, total, items: [...state.items] };
                 
-                // Guarda en la fecha local real
                 push(ref(db, `ventas_diarias/${todayStr}`), orderData);
                 set(ref(db, `mesas_activas/${currentTableId}`), { items: [], startTime: null });
                 alert(`${tableName} liberada.`);
