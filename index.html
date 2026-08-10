@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Crepero - POS Responsive</title>
+    <title>El Crepero - POS con Historial por Fechas</title>
     <style>
         * {
             box-sizing: border-box;
@@ -42,9 +42,7 @@
             text-transform: uppercase;
         }
 
-        .logo span {
-            color: #ff9800;
-        }
+        .logo span { color: #ff9800; }
 
         .header-actions {
             display: flex;
@@ -78,9 +76,7 @@
             overflow: hidden;
         }
 
-        .view.active {
-            display: flex;
-        }
+        .view.active { display: flex; }
 
         /* ================= VISTA CROQUIS ================= */
         #tablesView {
@@ -197,6 +193,52 @@
         .table-card.busy .table-status { background: #e65100; color: #ffe0b2; }
         .table-time { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
         .table-total { font-size: 0.8rem; font-weight: 800; color: #ff9800; margin-top: 2px; }
+
+        /* ================= VISTA HISTORIAL ================= */
+        #historyView {
+            padding: 16px;
+            background: #181818;
+            overflow-y: auto;
+            flex-direction: column;
+        }
+
+        .history-filter-bar {
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .date-picker-input {
+            background: #181818;
+            color: #ff9800;
+            border: 1px solid #ff9800;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .history-summary {
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .history-list { display: flex; flex-direction: column; gap: 10px; }
+        .history-card { background: #242424; border: 1px solid #333; border-left: 4px solid #2e7d32; border-radius: 8px; padding: 12px; }
 
         /* ================= VISTA POS RESPONSIVE ================= */
         #posView {
@@ -325,53 +367,32 @@
         .btn-send { background: #ff9800; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 800; flex: 2; }
         .btn-close-table { background: #2e7d32; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 800; flex: 1.5; }
 
-        /* Botón Flotante para ver Carrito en Móvil */
         .mobile-cart-toggle {
             display: none;
             position: absolute;
-            bottom: 16px;
-            right: 16px;
-            background: #ff9800;
-            color: #000;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 30px;
-            font-weight: 900;
+            bottom: 16px; right: 16px;
+            background: #ff9800; color: #000;
+            border: none; padding: 12px 20px;
+            border-radius: 30px; font-weight: 900;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             z-index: 10;
         }
 
-        /* ================= OPTIMIZACIÓN CELULAR Y TABLET ================= */
         @media (max-width: 768px) {
-            .layout-container {
-                grid-template-columns: 1fr;
-            }
-            .stage-zone {
-                grid-column: 1;
-                writing-mode: horizontal-tb;
-                height: 36px;
-            }
+            .layout-container { grid-template-columns: 1fr; }
+            .stage-zone { grid-column: 1; writing-mode: horizontal-tb; height: 36px; }
             .bottom-corridor { grid-column: 1; }
-
-            /* Modo Pestaña en Móvil para POS */
             #posView { flex-direction: column; }
             .menu-section { flex: 1; width: 100%; }
             .order-panel {
-                display: none; /* Se oculta por defecto en celular */
+                display: none;
                 position: absolute;
                 top: 0; left: 0; right: 0; bottom: 0;
-                z-index: 20;
-                width: 100%;
+                z-index: 20; width: 100%;
             }
             .order-panel.active-mobile { display: flex; }
             .mobile-cart-toggle { display: block; }
         }
-
-        /* Historial */
-        #historyView { padding: 16px; background: #181818; overflow-y: auto; flex-direction: column; }
-        .history-summary { background: #242424; border: 1px solid #333; border-radius: 12px; padding: 12px; margin-bottom: 16px; display: flex; justify-content: space-around; text-align: center; }
-        .history-list { display: flex; flex-direction: column; gap: 10px; }
-        .history-card { background: #242424; border: 1px solid #333; border-left: 4px solid #2e7d32; border-radius: 8px; padding: 12px; }
     </style>
 </head>
 <body>
@@ -380,7 +401,7 @@
         <div class="logo">EL <span>CREPERO</span></div>
         <div id="activeTableLabel" style="font-weight: bold; color: #ff9800; font-size: 1rem;"></div>
         <div class="header-actions">
-            <button id="btnHistoryView" class="header-btn" onclick="showHistoryView()">📋 Ventas</button>
+            <button id="btnHistoryView" class="header-btn" onclick="showHistoryView()">📋 Historial / Ventas</button>
             <button id="btnSwitchView" class="header-btn" style="display: none;" onclick="showTablesView()">← Croquis</button>
         </div>
     </header>
@@ -403,20 +424,26 @@
         </div>
     </div>
 
-    <!-- 2. VISTA HISTORIAL -->
+    <!-- 2. VISTA HISTORIAL DE VENTAS POR FECHA -->
     <div id="historyView" class="view">
         <div class="tables-header">
-            <div class="tables-title">Ventas del Día</div>
+            <div class="tables-title">Consulta de Ventas</div>
             <div style="display: flex; gap: 6px;">
-                <button class="header-btn btn-export" onclick="exportDailyCSV()">📥 Exportar</button>
-                <button class="header-btn btn-reset" onclick="resetDay()">🧹 Reset</button>
+                <button class="header-btn btn-export" onclick="exportDailyCSV()">📥 Exportar Día</button>
+                <button class="header-btn btn-reset" onclick="startNewTurn()">🔄 Nuevo Turno</button>
                 <button class="header-btn" onclick="showTablesView()">← Volver</button>
             </div>
         </div>
 
+        <!-- Filtro por Fecha -->
+        <div class="history-filter-bar">
+            <label for="historyDatePicker" style="font-size: 0.85rem; font-weight: bold; color: #ccc;">Seleccionar Fecha:</label>
+            <input type="date" id="historyDatePicker" class="date-picker-input" onchange="loadHistoryForDate(this.value)">
+        </div>
+
         <div class="history-summary">
             <div>
-                <div style="font-size: 0.75rem; color: #888;">Órdenes</div>
+                <div style="font-size: 0.75rem; color: #888;">Órdenes Cerradas</div>
                 <div id="summaryCount" style="font-size: 1.2rem; font-weight: 800; color: #ff9800;">0</div>
             </div>
             <div>
@@ -441,7 +468,6 @@
             <div class="items-grid" id="itemsGrid"></div>
         </div>
 
-        <!-- Botón flotante para celular -->
         <button class="mobile-cart-toggle" id="mobileCartBtn" onclick="toggleMobileCart()">🛒 Ver Orden (Q 0.00)</button>
 
         <div class="order-panel" id="orderPanel">
@@ -504,6 +530,9 @@
         let currentTableId = null;
         let currentCat = 'all';
 
+        // Fecha seleccionada por defecto: Hoy YYYY-MM-DD
+        let selectedDateStr = new Date().toISOString().split('T')[0];
+
         const menu = [
             { id: 1, cat: 'desayunos', name: 'Desayuno El Crepero', desc: '2 huevos, frijol, salsa, pan, chorizo, plátanos, crema, café', price: 45 },
             { id: 2, cat: 'desayunos', name: 'Bagel de Pavo y Fruta', desc: 'Ajonjolí/amapola, queso, jamón pavo, ranch, fruta, café', price: 42 },
@@ -549,8 +578,7 @@
             return new Date(isoStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
         }
 
-        const todayDateStr = new Date().toISOString().split('T')[0];
-
+        // Escuchar Mesas Activas en Tiempo Real
         onValue(ref(db, 'mesas_activas/'), (snapshot) => {
             const data = snapshot.val();
             if (data) { tablesState = data; } 
@@ -559,11 +587,15 @@
             if (currentTableId) updateCartUI();
         });
 
-        onValue(ref(db, `ventas_diarias/${todayDateStr}`), (snapshot) => {
-            const data = snapshot.val();
-            dailyHistory = data ? Object.values(data) : [];
-            if (document.getElementById('historyView').classList.contains('active')) renderHistory();
-        });
+        // Cargar Ventas según la fecha seleccionada
+        window.loadHistoryForDate = function(dateStr) {
+            selectedDateStr = dateStr || new Date().toISOString().split('T')[0];
+            onValue(ref(db, `ventas_diarias/${selectedDateStr}`), (snapshot) => {
+                const data = snapshot.val();
+                dailyHistory = data ? Object.values(data) : [];
+                renderHistory();
+            }, { onlyOnce: true });
+        };
 
         function createCardHTML(table) {
             const state = tablesState[table.id] || { items: [], startTime: null };
@@ -622,7 +654,11 @@
             document.getElementById('btnSwitchView').style.display = 'none';
             document.getElementById('btnHistoryView').style.display = 'none';
             document.getElementById('activeTableLabel').innerText = '';
-            renderHistory();
+            
+            // Ajustar el picker a la fecha actual si está vacío
+            const picker = document.getElementById('historyDatePicker');
+            picker.value = selectedDateStr;
+            loadHistoryForDate(selectedDateStr);
         };
 
         window.openPOS = function(tableId) {
@@ -646,22 +682,26 @@
             list.innerHTML = '';
             let grandTotal = 0;
 
-            dailyHistory.slice().reverse().forEach(order => {
-                grandTotal += order.total;
-                const card = document.createElement('div');
-                card.className = 'history-card';
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; font-weight:700;">
-                        <span>${order.tableName}</span>
-                        <span style="color:#ff9800;">Q ${order.total.toFixed(2)}</span>
-                    </div>
-                    <div style="font-size:0.75rem; color:#aaa; margin:4px 0;">⏱️ ${formatTime(order.startTime)} ➔ 🏁 ${formatTime(order.endTime)}</div>
-                    <div style="font-size:0.8rem; color:#ddd; border-top:1px solid #333; padding-top:4px;">
-                        ${order.items ? order.items.map(i => `${i.qty}x ${i.name}`).join(' • ') : ''}
-                    </div>
-                `;
-                list.appendChild(card);
-            });
+            if (dailyHistory.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color:#777; padding:20px;">No hay ventas registradas para el ${selectedDateStr}.</div>`;
+            } else {
+                dailyHistory.slice().reverse().forEach(order => {
+                    grandTotal += order.total;
+                    const card = document.createElement('div');
+                    card.className = 'history-card';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; font-weight:700;">
+                            <span>${order.tableName}</span>
+                            <span style="color:#ff9800;">Q ${order.total.toFixed(2)}</span>
+                        </div>
+                        <div style="font-size:0.75rem; color:#aaa; margin:4px 0;">⏱️ ${formatTime(order.startTime)} ➔ 🏁 ${formatTime(order.endTime)}</div>
+                        <div style="font-size:0.8rem; color:#ddd; border-top:1px solid #333; padding-top:4px;">
+                            ${order.items ? order.items.map(i => `${i.qty}x ${i.name}`).join(' • ') : ''}
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
 
             document.getElementById('summaryCount').innerText = dailyHistory.length;
             document.getElementById('summaryTotal').innerText = `Q ${grandTotal.toFixed(2)}`;
@@ -784,10 +824,13 @@
 
             const endTime = new Date().toISOString();
             const total = state.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const todayStr = new Date().toISOString().split('T')[0];
 
             if (confirm(`¿Cobrar y liberar ${tableName}?\nTotal: Q ${total.toFixed(2)}`)) {
                 const orderData = { tableName, startTime: state.startTime, endTime, total, items: [...state.items] };
-                push(ref(db, `ventas_diarias/${todayDateStr}`), orderData);
+                
+                // Guarda siempre en la fecha del día actual en que se cobra
+                push(ref(db, `ventas_diarias/${todayStr}`), orderData);
                 set(ref(db, `mesas_activas/${currentTableId}`), { items: [], startTime: null });
                 alert(`${tableName} liberada.`);
                 showTablesView();
@@ -795,25 +838,29 @@
         };
 
         window.exportDailyCSV = function() {
-            if (dailyHistory.length === 0) { alert('No hay ventas.'); return; }
-            let csv = "data:text/csv;charset=utf-8,Orden,Mesa,Inicio,Cierre,Productos,Total\n";
+            if (dailyHistory.length === 0) { alert(`No hay ventas en la fecha ${selectedDateStr}.`); return; }
+            let csv = `data:text/csv;charset=utf-8,Orden,Mesa,Inicio,Cierre,Productos,Total\n`;
             let total = 0;
             dailyHistory.forEach((o, i) => {
                 total += o.total;
                 const itemsStr = o.items ? o.items.map(it => `${it.qty}x ${it.name}`).join(' | ') : '';
                 csv += `${i + 1},"${o.tableName}","${formatTime(o.startTime)}","${formatTime(o.endTime)}","${itemsStr}",${o.total.toFixed(2)}\n`;
             });
-            csv += `\n,,,"TOTAL:",${dailyHistory.length} Ordenes,Q ${total.toFixed(2)}\n`;
+            csv += `\n,,,"TOTAL DEL DIA:",${dailyHistory.length} Ordenes,Q ${total.toFixed(2)}\n`;
             const link = document.createElement("a");
             link.href = encodeURI(csv);
-            link.download = `Cierre_${todayDateStr}.csv`;
+            link.download = `Cierre_${selectedDateStr}.csv`;
             link.click();
         };
 
-        window.resetDay = function() {
-            if (confirm('⚠️ ¿Reiniciar ventas del día?')) {
-                set(ref(db, `ventas_diarias/${todayDateStr}`), null);
-                alert('Día reiniciado.');
+        // Iniciar nuevo turno limpiando las mesas activas sin borrar ventas históricas
+        window.startNewTurn = function() {
+            if (confirm('🔄 ¿Deseas iniciar un nuevo turno?\nEsto dejará todas las mesas en limpio sin borrar las ventas históricas.')) {
+                initialTables.forEach(t => {
+                    set(ref(db, `mesas_activas/${t.id}`), { items: [], startTime: null });
+                });
+                alert('¡Turno reiniciado! Todas las mesas están libres.');
+                showTablesView();
             }
         };
 
