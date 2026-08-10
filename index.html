@@ -1,0 +1,1107 @@
+html_code = """<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>El Crepero - POS con Croquis Real</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #121212;
+            color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: #1e1e1e;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            height: 60px;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .logo span {
+            color: #ff9800;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .header-btn {
+            background: #2a2a2a;
+            color: #ff9800;
+            border: 1px solid #ff9800;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-btn:active {
+            background: #ff9800;
+            color: #000;
+        }
+
+        .btn-export {
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+        }
+
+        .btn-reset {
+            background: #3a2222;
+            color: #ff5555;
+            border: 1px solid #552222;
+        }
+
+        /* Views Container */
+        .view {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        /* ================= VISTA CROQUIS DE MESAS ================= */
+        #tablesView {
+            flex-direction: column;
+            padding: 16px;
+            background: #181818;
+            overflow-y: auto;
+            align-items: center;
+        }
+
+        .tables-header {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .tables-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ddd;
+        }
+
+        /* Contenedor del Mapa Basado en el Croquis */
+        .layout-container {
+            width: 100%;
+            max-width: 900px;
+            background: #1e1e1e;
+            border: 2px dashed #444;
+            border-radius: 16px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 120px 1fr 120px;
+            grid-template-rows: auto auto auto;
+            gap: 16px;
+            position: relative;
+        }
+
+        /* Columna Izquierda: Barras / Pasillo */
+        .left-bar-zone {
+            grid-column: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            justify-content: space-around;
+            background: #181818;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        /* Zona Central: Mesas 3 a 8 en 2 Columnas */
+        .tables-center-zone {
+            grid-column: 2;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        /* Escenario a la Derecha */
+        .stage-zone {
+            grid-column: 3;
+            grid-row: 1 / span 3;
+            background: #2a2215;
+            border: 2px solid #ff9800;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-rl;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #ff9800;
+            font-size: 1.1rem;
+            padding: 10px;
+        }
+
+        /* Pasillo Inferior / Caja */
+        .bottom-corridor {
+            grid-column: 1 / span 3;
+            background: #181818;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .corridor-label {
+            font-weight: 800;
+            color: #ff9800;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        /* Tarjeta de Mesa */
+        .table-card {
+            background: #242424;
+            border: 2px solid #333;
+            border-radius: 14px;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            min-height: 100px;
+        }
+
+        .table-card:active {
+            transform: scale(0.96);
+        }
+
+        .table-card.free {
+            border-color: #2e7d32;
+        }
+
+        .table-card.busy {
+            border-color: #ff9800;
+            background: #2a2215;
+        }
+
+        .table-card.takeaway {
+            border-color: #0288d1;
+        }
+
+        .table-number {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .table-status {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .table-card.free .table-status {
+            background: #1b5e20;
+            color: #81c784;
+        }
+
+        .table-card.busy .table-status {
+            background: #e65100;
+            color: #ffe0b2;
+        }
+
+        .table-time {
+            font-size: 0.7rem;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        .table-total {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #ff9800;
+            margin-top: 2px;
+        }
+
+        /* ================= VISTA HISTORIAL ================= */
+        #historyView {
+            flex-direction: column;
+            padding: 20px;
+            background: #181818;
+            overflow-y: auto;
+        }
+
+        .history-summary {
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .summary-box div:first-child {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .summary-box div:last-child {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ff9800;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .history-card {
+            background: #242424;
+            border: 1px solid #333;
+            border-left: 4px solid #2e7d32;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .history-card-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .history-times {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .history-items {
+            font-size: 0.85rem;
+            color: #ddd;
+            border-top: 1px solid #333;
+            padding-top: 8px;
+        }
+
+        /* ================= VISTA POS ================= */
+        #posView {
+            flex-direction: row;
+        }
+
+        .menu-section {
+            flex: 1.8;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2a2a2a;
+            background: #181818;
+        }
+
+        .categories-bar {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #1e1e1e;
+            overflow-x: auto;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .cat-btn {
+            background: #2a2a2a;
+            color: #aaa;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .cat-btn.active {
+            background: #ff9800;
+            color: #000;
+        }
+
+        .items-grid {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            align-content: start;
+        }
+
+        .item-card {
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            min-height: 100px;
+        }
+
+        .item-card:active {
+            transform: scale(0.97);
+            background: #2d2d2d;
+        }
+
+        .item-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .item-sub {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .item-price {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ff9800;
+            align-self: flex-end;
+        }
+
+        /* Order Panel */
+        .order-panel {
+            flex: 1.2;
+            background: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            min-width: 320px;
+        }
+
+        .panel-header {
+            padding: 16px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .time-badge {
+            font-size: 0.75rem;
+            background: #333;
+            color: #ff9800;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .cart-items {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cart-item {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #ff9800;
+        }
+
+        .cart-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            max-width: 60%;
+        }
+
+        .cart-item-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .cart-item-price {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #181818;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .qty-btn {
+            background: #333;
+            color: #fff;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .qty-btn:active {
+            background: #ff9800;
+            color: #000;
+        }
+
+        .qty-val {
+            font-size: 0.9rem;
+            font-weight: bold;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .panel-footer {
+            padding: 16px;
+            background: #252525;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.3rem;
+            font-weight: 900;
+        }
+
+        .total-row span:last-child {
+            color: #ff9800;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-clear {
+            background: #3a2222;
+            color: #ff5555;
+            border: 1px solid #552222;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-send {
+            background: #ff9800;
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            flex: 2;
+            text-transform: uppercase;
+        }
+
+        .btn-close-table {
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            flex: 1.5;
+            text-transform: uppercase;
+        }
+
+        /* Responsive Layout Croquis */
+        @media (max-width: 768px) {
+            .layout-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+            .stage-zone {
+                grid-column: 1;
+                grid-row: auto;
+                writing-mode: horizontal-tb;
+                height: 40px;
+            }
+            #posView {
+                flex-direction: column;
+            }
+            .order-panel {
+                min-width: 100%;
+                height: 45vh;
+                border-top: 2px solid #333;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">EL <span>CREPERO</span></div>
+        <div id="activeTableLabel" style="font-weight: bold; color: #ff9800; font-size: 1.1rem;"></div>
+        <div class="header-actions">
+            <button id="btnHistoryView" class="header-btn" onclick="showHistoryView()">
+                📋 Ventas del Día
+            </button>
+            <button id="btnSwitchView" class="header-btn" style="display: none;" onclick="showTablesView()">
+                ← Ver Croquis
+            </button>
+        </div>
+    </header>
+
+    <!-- 1. VISTA CONTROL DE MESAS (CROQUIS) -->
+    <div id="tablesView" class="view active">
+        <div class="tables-header">
+            <div class="tables-title">Croquis del Local</div>
+            <span style="font-size: 0.85rem; color: #888;">Toque una ubicación para ordenar</span>
+        </div>
+
+        <div class="layout-container">
+            <!-- Columna Izquierda: Barras -->
+            <div class="left-bar-zone" id="leftBarZone"></div>
+
+            <!-- Centro: Mesas 3, 4, 5 y 8, 7, 6 -->
+            <div class="tables-center-zone" id="centerTablesZone"></div>
+
+            <!-- Derecha: Escenario -->
+            <div class="stage-zone">🎭 ESCENARIO</div>
+
+            <!-- Abajo: Entrada / El Crepero / Para Llevar -->
+            <div class="bottom-corridor">
+                <div class="corridor-label">👨‍🍳 El Crepero (Cocina/Caja)</div>
+                <div id="takeawayZone" style="width: 140px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. VISTA HISTORIAL DEL DÍA -->
+    <div id="historyView" class="view">
+        <div class="tables-header">
+            <div class="tables-title">Historial de Órdenes del Día</div>
+            <div style="display: flex; gap: 8px;">
+                <button class="header-btn btn-export" onclick="exportDailyCSV()">📥 Exportar Cierre</button>
+                <button class="header-btn btn-reset" onclick="resetDay()">🧹 Nuevo Día</button>
+                <button class="header-btn" onclick="showTablesView()">← Volver</button>
+            </div>
+        </div>
+
+        <div class="history-summary">
+            <div class="summary-box">
+                <div>Órdenes Cerradas</div>
+                <div id="summaryCount">0</div>
+            </div>
+            <div class="summary-box">
+                <div>Venta Total</div>
+                <div id="summaryTotal">Q 0.00</div>
+            </div>
+        </div>
+
+        <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- 3. VISTA TOMA DE PEDIDOS (POS) -->
+    <div id="posView" class="view">
+        <div class="menu-section">
+            <div class="categories-bar">
+                <button class="cat-btn active" onclick="filterCat('all')">Todos</button>
+                <button class="cat-btn" onclick="filterCat('desayunos')">Desayunos/Cenas</button>
+                <button class="cat-btn" onclick="filterCat('saladas')">Saladas</button>
+                <button class="cat-btn" onclick="filterCat('dulces')">Dulces</button>
+                <button class="cat-btn" onclick="filterCat('bebidas')">Bebidas</button>
+            </div>
+            <div class="items-grid" id="itemsGrid"></div>
+        </div>
+
+        <div class="order-panel">
+            <div class="panel-header">
+                <span id="posTableTitle">Orden</span>
+                <span id="posStartTime" class="time-badge">Inicio: --:--</span>
+            </div>
+
+            <div class="cart-items" id="cartItems"></div>
+
+            <div class="panel-footer">
+                <div class="total-row">
+                    <span>Total</span>
+                    <span id="totalPrice">Q 0.00</span>
+                </div>
+                <div class="action-btns">
+                    <button class="btn-clear" onclick="clearCurrentCart()">Vaciar</button>
+                    <button class="btn-send" onclick="saveOrderToTable()">Guardar</button>
+                    <button class="btn-close-table" onclick="payAndFreeTable()">Cobrar / Liberar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE FIREBASE REALTIME DATABASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlU2dB12caXrez3UXj0v4ojl893_sDWK8",
+            authDomain: "elcrepero-1752a.firebaseapp.com",
+            databaseURL: "https://elcrepero-1752a-default-rtdb.firebaseio.com",
+            projectId: "elcrepero-1752a",
+            storageBucket: "elcrepero-1752a.firebasestorage.app",
+            messagingSenderId: "327079955432",
+            appId: "1:327079955432:web:49e17e765625b70fdcf25d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Definición de las Ubicaciones según el Croquis
+        const initialTables = [
+            { id: 1, name: 'Barra 1', zone: 'left' },
+            { id: 2, name: 'Barra 2', zone: 'left' },
+            { id: 3, name: 'Mesa 3', zone: 'center', pos: 1 },
+            { id: 4, name: 'Mesa 4', zone: 'center', pos: 2 },
+            { id: 5, name: 'Mesa 5', zone: 'center', pos: 3 },
+            { id: 6, name: 'Mesa 6', zone: 'center', pos: 6 },
+            { id: 7, name: 'Mesa 7', zone: 'center', pos: 5 },
+            { id: 8, name: 'Mesa 8', zone: 'center', pos: 4 },
+            { id: 9, name: 'Para Llevar', zone: 'takeaway' }
+        ];
+
+        let tablesState = {};
+        initialTables.forEach(t => tablesState[t.id] = { items: [], startTime: null });
+
+        let dailyHistory = [];
+        let currentTableId = null;
+        let currentCat = 'all';
+
+        const menu = [
+            { id: 1, cat: 'desayunos', name: 'Desayuno El Crepero', desc: '2 huevos, frijol, salsa, pan, chorizo, plátanos, crema, café', price: 45 },
+            { id: 2, cat: 'desayunos', name: 'Bagel de Pavo y Fruta', desc: 'Ajonjolí/amapola, queso, jamón pavo, ranch, fruta, café', price: 42 },
+            { id: 3, cat: 'desayunos', name: 'Toast Tocino y Yogurt', desc: 'Pan artesanal, aguacate, tocino, yogurt, fruta, nueces, café', price: 40 },
+            { id: 4, cat: 'desayunos', name: 'Toast Huevo y Fruta', desc: 'Queso crema, tomate, jamón, huevo, fruta, café', price: 40 },
+            { id: 5, cat: 'desayunos', name: 'Panqueques con Nutella', desc: '3 panqueques con Nutella, fresa, banano y café', price: 38 },
+            { id: 6, cat: 'desayunos', name: 'Waffles con Fruta', desc: '3 waffles con Nutella, fresa, banano y café', price: 40 },
+            { id: 7, cat: 'saladas', name: 'Crepa Jamón y Queso', desc: 'Jamón de pavo y queso mozzarella', price: 44 },
+            { id: 8, cat: 'saladas', name: 'Crepa Pesto y Queso', desc: 'Salsa pesto, parmesano, piñones, mozzarella', price: 45 },
+            { id: 9, cat: 'saladas', name: 'Crepa Pollo y Pesto', desc: 'Pollo, salsa pesto, parmesano, piñones, mozzarella', price: 50 },
+            { id: 10, cat: 'saladas', name: 'Crepa Margarita', desc: 'Salsa artesanal, mozzarella, tomate manzano, albahaca', price: 48 },
+            { id: 11, cat: 'saladas', name: 'Crepa Chorizo y Queso', desc: 'Chorizo argentino premium y mozzarella', price: 49 },
+            { id: 12, cat: 'saladas', name: 'Crepizza Jam', desc: 'Salsa artesanal, mozzarella, jamón de pavo', price: 48 },
+            { id: 13, cat: 'dulces', name: 'Nutella Lover', desc: 'Nutella pura', price: 34 },
+            { id: 14, cat: 'dulces', name: 'Nutella Banano', desc: 'Nutella y banano', price: 35 },
+            { id: 15, cat: 'dulces', name: 'Nutella Fresa', desc: 'Nutella y fresa', price: 37 },
+            { id: 16, cat: 'dulces', name: 'Nutella Melocotón', desc: 'Nutella y melocotón', price: 40 },
+            { id: 17, cat: 'dulces', name: 'Nutella Mixta', desc: 'Nutella, banano, fresa y melocotón', price: 45 },
+            { id: 18, cat: 'dulces', name: 'Pistacho Crunch', desc: 'Crema de pistacho', price: 33 },
+            { id: 19, cat: 'dulces', name: 'Pistacho Banano', desc: 'Crema de pistacho y banano', price: 34 },
+            { id: 20, cat: 'dulces', name: 'Pistacho Fresa', desc: 'Crema de pistacho y fresa', price: 37 },
+            { id: 21, cat: 'dulces', name: 'Pistacho Melocotón', desc: 'Crema de pistacho y melocotón', price: 40 },
+            { id: 22, cat: 'dulces', name: 'Pistacho Mixta', desc: 'Pistacho, banano, fresa, melocotón y nueces', price: 46 },
+            { id: 23, cat: 'dulces', name: 'Dulce de Leche Base', desc: 'Dulce de leche solo', price: 31 },
+            { id: 24, cat: 'dulces', name: 'Dulce de Leche Banano', desc: 'Dulce de leche y banano', price: 34 },
+            { id: 25, cat: 'dulces', name: 'Dulce de Leche Fresa', desc: 'Dulce de leche y fresa', price: 35 },
+            { id: 26, cat: 'dulces', name: 'Dulce de Leche Melocotón', desc: 'Dulce de leche y melocotón', price: 38 },
+            { id: 27, cat: 'dulces', name: 'Dulce de Leche Mixta', desc: 'Dulce de leche, banano, fresa y melocotón', price: 43 },
+            { id: 28, cat: 'dulces', name: 'Strawberry Cream', desc: 'Mermelada de fresa y queso crema', price: 40 },
+            { id: 29, cat: 'dulces', name: 'Colombianita', desc: 'Nutella y queso mozzarella', price: 40 },
+            { id: 30, cat: 'bebidas', name: 'Café Negro', desc: 'Caliente', price: 10 },
+            { id: 31, cat: 'bebidas', name: 'Café con Leche', desc: 'Caliente', price: 15 },
+            { id: 32, cat: 'bebidas', name: 'Coffee Ice', desc: 'Frío', price: 25 },
+            { id: 33, cat: 'bebidas', name: 'Copa de Vino', desc: 'Tinto/Blanco', price: 20 },
+            { id: 34, cat: 'bebidas', name: 'Té de la Casa', desc: 'Infusión', price: 12 },
+            { id: 35, cat: 'bebidas', name: 'Coca Cola', desc: 'Lata/Botella', price: 12 },
+            { id: 36, cat: 'bebidas', name: 'Jamaica', desc: 'Bebida fría', price: 15 },
+            { id: 37, cat: 'bebidas', name: 'Cerveza Moza', desc: 'Cerveza', price: 18 }
+        ];
+
+        function formatTime(isoStr) {
+            if (!isoStr) return '--:--';
+            return new Date(isoStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        const todayDateStr = new Date().toISOString().split('T')[0];
+
+        // Escuchar Mesas
+        onValue(ref(db, 'mesas_activas/'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                tablesState = data;
+            } else {
+                initialTables.forEach(t => tablesState[t.id] = { items: [], startTime: null });
+            }
+            renderCroquis();
+            if (currentTableId) updateCartUI();
+        });
+
+        // Escuchar Historial
+        onValue(ref(db, `ventas_diarias/${todayDateStr}`), (snapshot) => {
+            const data = snapshot.val();
+            dailyHistory = data ? Object.values(data) : [];
+            if (document.getElementById('historyView').classList.contains('active')) {
+                renderHistory();
+            }
+        });
+
+        // RENDER DEL CROQUIS EXACTO SEGÚN DIBUJO
+        function createCardHTML(table) {
+            const state = tablesState[table.id] || { items: [], startTime: null };
+            const items = state.items || [];
+            const isBusy = items.length > 0;
+            const total = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            return `
+                <div class="table-card ${isBusy ? 'busy' : 'free'} ${table.id === 9 ? 'takeaway' : ''}" onclick="openPOS(${table.id})">
+                    <div class="table-number">${table.name}</div>
+                    <div class="table-status">${isBusy ? 'Ocupada' : 'Libre'}</div>
+                    ${isBusy ? `<div class="table-time">⏱️ ${formatTime(state.startTime)}</div>` : ''}
+                    ${isBusy ? `<div class="table-total">Q ${total.toFixed(2)}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function renderCroquis() {
+            const leftZone = document.getElementById('leftBarZone');
+            const centerZone = document.getElementById('centerTablesZone');
+            const takeawayZone = document.getElementById('takeawayZone');
+
+            if (!leftZone || !centerZone || !takeawayZone) return;
+
+            // 1. Render Barras 1 y 2 (Izquierda) - En orden de arriba a abajo
+            const leftTables = initialTables.filter(t => t.zone === 'left').reverse();
+            leftZone.innerHTML = leftTables.map(t => createCardHTML(t)).join('');
+
+            // 2. Render Mesas Centrales (3, 4, 5 a la izq / 8, 7, 6 a la der)
+            const centerOrder = [
+                initialTables.find(t => t.id === 5), // Arriba Izq
+                initialTables.find(t => t.id === 6), // Arriba Der
+                initialTables.find(t => t.id === 4), // Centro Izq
+                initialTables.find(t => t.id === 7), // Centro Der
+                initialTables.find(t => t.id === 3), // Abajo Izq
+                initialTables.find(t => t.id === 8)  // Abajo Der
+            ];
+            centerZone.innerHTML = centerOrder.map(t => createCardHTML(t)).join('');
+
+            // 3. Para Llevar (Abajo)
+            const takeawayObj = initialTables.find(t => t.id === 9);
+            takeawayZone.innerHTML = createCardHTML(takeawayObj);
+        }
+
+        // VINCULACIÓN GLOBAL WINDOW
+        window.showTablesView = function() {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('tablesView').classList.add('active');
+            document.getElementById('btnSwitchView').style.display = 'none';
+            document.getElementById('btnHistoryView').style.display = 'flex';
+            document.getElementById('activeTableLabel').innerText = '';
+            renderCroquis();
+        };
+
+        window.showHistoryView = function() {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('historyView').classList.add('active');
+            document.getElementById('btnSwitchView').style.display = 'none';
+            document.getElementById('btnHistoryView').style.display = 'none';
+            document.getElementById('activeTableLabel').innerText = '';
+            renderHistory();
+        };
+
+        window.openPOS = function(tableId) {
+            currentTableId = tableId;
+            const tableObj = initialTables.find(t => t.id === tableId);
+
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('posView').classList.add('active');
+            document.getElementById('btnSwitchView').style.display = 'flex';
+            document.getElementById('btnHistoryView').style.display = 'none';
+            document.getElementById('activeTableLabel').innerText = tableObj.name;
+            document.getElementById('posTableTitle').innerText = `Orden - ${tableObj.name}`;
+
+            renderMenuGrid();
+            updateCartUI();
+        };
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            let grandTotal = 0;
+
+            dailyHistory.slice().reverse().forEach(order => {
+                grandTotal += order.total;
+
+                const card = document.createElement('div');
+                card.className = 'history-card';
+                card.innerHTML = `
+                    <div class="history-card-header">
+                        <span>${order.tableName}</span>
+                        <span style="color: #ff9800;">Q ${order.total.toFixed(2)}</span>
+                    </div>
+                    <div class="history-times">
+                        <span>⏱️ Inicio: ${formatTime(order.startTime)}</span>
+                        <span>🏁 Cierre: ${formatTime(order.endTime)}</span>
+                    </div>
+                    <div class="history-items">
+                        ${order.items ? order.items.map(i => `${i.qty}x ${i.name}`).join(' • ') : ''}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            document.getElementById('summaryCount').innerText = dailyHistory.length;
+            document.getElementById('summaryTotal').innerText = `Q ${grandTotal.toFixed(2)}`;
+        }
+
+        function renderMenuGrid() {
+            const grid = document.getElementById('itemsGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const filtered = currentCat === 'all' ? menu : menu.filter(i => i.cat === currentCat);
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.onclick = () => addToCart(item);
+                card.innerHTML = `
+                    <div>
+                        <div class="item-title">${item.name}</div>
+                        <div class="item-sub">${item.desc}</div>
+                    </div>
+                    <div class="item-price">Q ${item.price.toFixed(2)}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        window.filterCat = function(cat) {
+            currentCat = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+            renderMenuGrid();
+        };
+
+        function addToCart(item) {
+            let state = tablesState[currentTableId] || { items: [], startTime: null };
+            if (!state.items) state.items = [];
+
+            if (!state.startTime) {
+                state.startTime = new Date().toISOString();
+            }
+
+            const existing = state.items.find(i => i.id === item.id);
+            if (existing) {
+                existing.qty++;
+            } else {
+                state.items.push({ ...item, qty: 1 });
+            }
+
+            tablesState[currentTableId] = state;
+            updateCartUI();
+        }
+
+        window.updateQty = function(id, delta) {
+            let state = tablesState[currentTableId];
+            if (!state || !state.items) return;
+
+            const item = state.items.find(i => i.id === id);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    state.items = state.items.filter(i => i.id !== id);
+                }
+            }
+            if (state.items.length === 0) {
+                state.startTime = null;
+            }
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            const cartContainer = document.getElementById('cartItems');
+            if (!cartContainer) return;
+            cartContainer.innerHTML = '';
+
+            let state = tablesState[currentTableId] || { items: [], startTime: null };
+            let cart = state.items || [];
+            let total = 0;
+
+            cart.forEach(item => {
+                total += item.price * item.qty;
+
+                const row = document.createElement('div');
+                row.className = 'cart-item';
+                row.innerHTML = `
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">Q ${item.price.toFixed(2)} c/u</div>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
+                        <span class="qty-val">${item.qty}</span>
+                        <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                    </div>
+                `;
+                cartContainer.appendChild(row);
+            });
+
+            document.getElementById('totalPrice').innerText = `Q ${total.toFixed(2)}`;
+            document.getElementById('posStartTime').innerText = state.startTime ? `Inicio: ${formatTime(state.startTime)}` : 'Inicio: --:--';
+        }
+
+        window.clearCurrentCart = function() {
+            tablesState[currentTableId] = { items: [], startTime: null };
+            set(ref(db, `mesas_activas/${currentTableId}`), tablesState[currentTableId]);
+            updateCartUI();
+        };
+
+        window.saveOrderToTable = function() {
+            const state = tablesState[currentTableId];
+            const tableName = initialTables.find(t => t.id === currentTableId).name;
+
+            if (!state || !state.items || state.items.length === 0) {
+                alert(`No hay ítems en la orden de ${tableName}.`);
+                return;
+            }
+
+            set(ref(db, `mesas_activas/${currentTableId}`), state);
+            alert(`¡Orden de ${tableName} guardada en Firebase!`);
+            showTablesView();
+        };
+
+        window.payAndFreeTable = function() {
+            const state = tablesState[currentTableId];
+            const tableName = initialTables.find(t => t.id === currentTableId).name;
+
+            if (!state || !state.items || state.items.length === 0) {
+                alert(`La ${tableName} está vacía.`);
+                return;
+            }
+
+            const endTime = new Date().toISOString();
+            const total = state.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            if (confirm(`¿Cobrar y liberar ${tableName}?\nTotal: Q ${total.toFixed(2)}`)) {
+                const orderData = {
+                    tableName: tableName,
+                    startTime: state.startTime,
+                    endTime: endTime,
+                    total: total,
+                    items: [...state.items]
+                };
+
+                push(ref(db, `ventas_diarias/${todayDateStr}`), orderData);
+                set(ref(db, `mesas_activas/${currentTableId}`), { items: [], startTime: null });
+
+                alert(`${tableName} liberada y guardada en el historial de Firebase.`);
+                showTablesView();
+            }
+        };
+
+        window.exportDailyCSV = function() {
+            if (dailyHistory.length === 0) {
+                alert('No hay ventas registradas en el día para exportar.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Orden,Mesa/Ubicacion,Hora Inicio,Hora Cierre,Detalle de Productos,Total (Q)\n";
+
+            let grandTotal = 0;
+
+            dailyHistory.forEach((order, index) => {
+                grandTotal += order.total;
+                const itemsStr = order.items ? order.items.map(i => `${i.qty}x ${i.name}`).join(' | ') : '';
+                const row = `${index + 1},"${order.tableName}","${formatTime(order.startTime)}","${formatTime(order.endTime)}","${itemsStr}",${order.total.toFixed(2)}`;
+                csvContent += row + "\n";
+            });
+
+            csvContent += `\n,,,"TOTAL DEL DIA:",${dailyHistory.length} Ordenes,Q ${grandTotal.toFixed(2)}\n`;
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Cierre_Caja_${todayDateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        window.resetDay = function() {
+            if (confirm('⚠️ ¿Estás seguro de reiniciar el día?\nEsto limpiará las ventas registradas del día actual.')) {
+                set(ref(db, `ventas_diarias/${todayDateStr}`), null);
+                alert('Cierre de día reiniciado.');
+            }
+        };
+
+        // Render inicial
+        renderCroquis();
+    </script>
+</body>
+</html>
