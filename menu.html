@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>El Crepero - Menú Digital</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #121212; color: #fff; padding-bottom: 90px; }
+        
+        header { background: #1e1e1e; padding: 10px; text-align: center; border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 10; display: flex; justify-content: center; align-items: center; }
+        .logo { height: 38px; }
+        .table-banner { background: #ff9800; color: #000; font-weight: 900; padding: 6px; font-size: 0.9rem; text-align: center; letter-spacing: 0.5px; }
+
+        .categories-bar { display: flex; gap: 8px; padding: 10px; overflow-x: auto; background: #181818; border-bottom: 1px solid #2a2a2a; position: sticky; top: 60px; z-index: 9; }
+        .cat-btn { background: #2a2a2a; color: #ccc; border: none; padding: 8px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; white-space: nowrap; }
+        .cat-btn.active { background: #ff9800; color: #000; }
+
+        .items-grid { padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .item-card { background: rgba(36, 36, 36, 0.9); border: 1px solid #333; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; }
+        .item-title { font-weight: 700; font-size: 0.85rem; color: #fff; line-height: 1.2; }
+        .item-desc { font-size: 0.65rem; color: #aaa; margin: 4px 0; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .item-price { color: #ff9800; font-weight: 900; font-size: 0.9rem; margin-top: 6px; }
+        .btn-add { background: #ff9800; color: #000; border: none; padding: 6px; border-radius: 6px; font-weight: 800; width: 100%; margin-top: 6px; font-size: 0.8rem; cursor: pointer; }
+
+        /* Modal Personalización */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(4px); }
+        .modal.active { display: flex; }
+        .modal-content { background: #222; border-radius: 16px; padding: 16px; width: 100%; max-width: 400px; border: 1px solid #444; }
+        .modal-title { font-size: 1.1rem; font-weight: 800; color: #ff9800; margin-bottom: 10px; }
+        .option-group { margin-bottom: 12px; }
+        .option-label { font-size: 0.8rem; font-weight: 700; color: #ccc; margin-bottom: 4px; display: block; }
+        .option-select, .notes-input { width: 100%; padding: 8px; background: #111; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 0.85rem; outline: none; }
+
+        /* Floating Cart */
+        .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e1e1e; padding: 12px; border-top: 2px solid #ff9800; display: flex; justify-content: space-between; align-items: center; z-index: 20; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
+        .btn-submit { background: #2e7d32; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header><img src="logo.png" class="logo" alt="El Crepero"></header>
+    <div class="table-banner" id="tableBanner">Cargando Mesa...</div>
+
+    <div class="categories-bar">
+        <button class="cat-btn active" onclick="filterCat('all')">Todos</button>
+        <button class="cat-btn" onclick="filterCat('desayunos')">Desayunos</button>
+        <button class="cat-btn" onclick="filterCat('saladas')">Saladas</button>
+        <button class="cat-btn" onclick="filterCat('dulces')">Dulces</button>
+        <button class="cat-btn" onclick="filterCat('bebidas')">Bebidas</button>
+    </div>
+
+    <div class="items-grid" id="itemsGrid"></div>
+
+    <!-- Modal Personalización de Opciones -->
+    <div class="modal" id="customModal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalItemTitle">Personaliza tu Orden</div>
+            
+            <div class="option-group">
+                <label class="option-label">Opciones adicionales:</label>
+                <select class="option-select" id="creamOption">
+                    <option value="Estándar">Estándar</option>
+                    <option value="Extra Queso/Crema (+Q5)">Extra Queso (+Q5.00)</option>
+                    <option value="Sin Crema/Salsa">Sin Crema/Salsa</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">Notas para cocina / Especificaciones:</label>
+                <input type="text" class="notes-input" id="itemNotes" placeholder="Ej: Poco dulce, bien tostado, sin cebolla...">
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:14px;">
+                <button style="flex:1; padding:10px; background:#444; color:#fff; border:none; border-radius:8px; font-weight:bold;" onclick="closeModal()">Cancelar</button>
+                <button style="flex:2; padding:10px; background:#ff9800; color:#000; font-weight:800; border:none; border-radius:8px;" onclick="confirmAddToCart()">Agregar al Pedido</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cart-bar">
+        <div>
+            <div style="font-size:0.75rem; color:#aaa;">Total Pedido:</div>
+            <div id="cartTotal" style="font-size:1.1rem; font-weight:900; color:#ff9800;">Q 0.00</div>
+        </div>
+        <button class="btn-submit" onclick="sendOrderToPOS()">🚀 Enviar Pedido a Cocina</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlU2dB12caXrez3UXj0v4ojl893_sDWK8",
+            authDomain: "elcrepero-1752a.firebaseapp.com",
+            databaseURL: "https://elcrepero-1752a-default-rtdb.firebaseio.com",
+            projectId: "elcrepero-1752a",
+            storageBucket: "elcrepero-1752a.firebasestorage.app",
+            messagingSenderId: "327079955432",
+            appId: "1:327079955432:web:49e17e765625b70fdcf25d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Capturar número de Mesa desde la URL (ej. ?mesa=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableId = parseInt(urlParams.get('mesa')) || 1;
+        document.getElementById('tableBanner').innerText = `ORDENANDO PARA MESA ${tableId}`;
+
+        // LISTA COMPLETA DE LOS 37 PRODUCTOS DEL POS
+        const menu = [
+            { id: 1, cat: 'desayunos', name: 'Desayuno El Crepero', desc: '2 huevos, frijol, salsa, pan, chorizo, plátanos, crema, café', price: 45 },
+            { id: 2, cat: 'desayunos', name: 'Bagel de Pavo y Fruta', desc: 'Ajonjolí/amapola, queso, jamón pavo, ranch, fruta, café', price: 42 },
+            { id: 3, cat: 'desayunos', name: 'Toast Tocino y Yogurt', desc: 'Pan artesanal, aguacate, tocino, yogurt, fruta, nueces, café', price: 40 },
+            { id: 4, cat: 'desayunos', name: 'Toast Huevo y Fruta', desc: 'Queso crema, tomate, jamón, huevo, fruta, café', price: 40 },
+            { id: 5, cat: 'desayunos', name: 'Panqueques con Nutella', desc: '3 panqueques con Nutella, fresa, banano y café', price: 38 },
+            { id: 6, cat: 'desayunos', name: 'Waffles con Fruta', desc: '3 waffles con Nutella, fresa, banano y café', price: 40 },
+            { id: 7, cat: 'saladas', name: 'Crepa Jamón y Queso', desc: 'Jamón de pavo y queso mozzarella', price: 44 },
+            { id: 8, cat: 'saladas', name: 'Crepa Pesto y Queso', desc: 'Salsa pesto, parmesano, piñones, mozzarella', price: 45 },
+            { id: 9, cat: 'saladas', name: 'Crepa Pollo y Pesto', desc: 'Pollo, salsa pesto, parmesano, piñones, mozzarella', price: 50 },
+            { id: 10, cat: 'saladas', name: 'Crepa Margarita', desc: 'Salsa artesanal, mozzarella, tomate manzano, albahaca', price: 48 },
+            { id: 11, cat: 'saladas', name: 'Crepa Chorizo y Queso', desc: 'Chorizo argentino premium y mozzarella', price: 49 },
+            { id: 12, cat: 'saladas', name: 'Crepizza Jam', desc: 'Salsa artesanal, mozzarella, jamón de pavo', price: 48 },
+            { id: 13, cat: 'dulces', name: 'Nutella Lover', desc: 'Nutella pura', price: 34 },
+            { id: 14, cat: 'dulces', name: 'Nutella Banano', desc: 'Nutella y banano', price: 35 },
+            { id: 15, cat: 'dulces', name: 'Nutella Fresa', desc: 'Nutella y fresa', price: 37 },
+            { id: 16, cat: 'dulces', name: 'Nutella Melocotón', desc: 'Nutella y melocotón', price: 40 },
+            { id: 17, cat: 'dulces', name: 'Nutella Mixta', desc: 'Nutella, banano, fresa y melocotón', price: 45 },
+            { id: 18, cat: 'dulces', name: 'Pistacho Crunch', desc: 'Crema de pistacho', price: 33 },
+            { id: 19, cat: 'dulces', name: 'Pistacho Banano', desc: 'Crema de pistacho y banano', price: 34 },
+            { id: 20, cat: 'dulces', name: 'Pistacho Fresa', desc: 'Crema de pistacho y fresa', price: 37 },
+            { id: 21, cat: 'dulces', name: 'Pistacho Melocotón', desc: 'Crema de pistacho y melocotón', price: 40 },
+            { id: 22, cat: 'dulces', name: 'Pistacho Mixta', desc: 'Pistacho, banano, fresa, melocotón y nueces', price: 46 },
+            { id: 23, cat: 'dulces', name: 'Dulce de Leche Base', desc: 'Dulce de leche solo', price: 31 },
+            { id: 24, cat: 'dulces', name: 'Dulce de Leche Banano', desc: 'Dulce de leche y banano', price: 34 },
+            { id: 25, cat: 'dulces', name: 'Dulce de Leche Fresa', desc: 'Dulce de leche y fresa', price: 35 },
+            { id: 26, cat: 'dulces', name: 'Dulce de Leche Melocotón', desc: 'Dulce de leche y melocotón', price: 38 },
+            { id: 27, cat: 'dulces', name: 'Dulce de Leche Mixta', desc: 'Dulce de leche, banano, fresa y melocotón', price: 43 },
+            { id: 28, cat: 'dulces', name: 'Strawberry Cream', desc: 'Mermelada de fresa y queso crema', price: 40 },
+            { id: 29, cat: 'dulces', name: 'Colombianita', desc: 'Nutella y queso mozzarella', price: 40 },
+            { id: 30, cat: 'bebidas', name: 'Café Negro', desc: 'Caliente', price: 10 },
+            { id: 31, cat: 'bebidas', name: 'Café con Leche', desc: 'Caliente', price: 15 },
+            { id: 32, cat: 'bebidas', name: 'Coffee Ice', desc: 'Frío', price: 25 },
+            { id: 33, cat: 'bebidas', name: 'Copa de Vino', desc: 'Tinto/Blanco', price: 20 },
+            { id: 34, cat: 'bebidas', name: 'Té de la Casa', desc: 'Infusión', price: 12 },
+            { id: 35, cat: 'bebidas', name: 'Coca Cola', desc: 'Lata/Botella', price: 12 },
+            { id: 36, cat: 'bebidas', name: 'Jamaica', desc: 'Bebida fría', price: 15 },
+            { id: 37, cat: 'bebidas', name: 'Cerveza Moza', desc: 'Cerveza', price: 18 }
+        ];
+
+        let cart = [];
+        let selectedItem = null;
+        let currentCat = 'all';
+
+        window.renderMenu = function() {
+            const grid = document.getElementById('itemsGrid');
+            grid.innerHTML = '';
+            const filtered = currentCat === 'all' ? menu : menu.filter(i => i.cat === currentCat);
+            
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="item-title">${item.name}</div>
+                        <div class="item-desc">${item.desc}</div>
+                    </div>
+                    <div>
+                        <div class="item-price">Q ${item.price.toFixed(2)}</div>
+                        <button class="btn-add" onclick="openModal(${item.id})">+ Agregar</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        };
+
+        window.filterCat = function(cat) {
+            currentCat = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+            renderMenu();
+        };
+
+        window.openModal = function(id) {
+            selectedItem = menu.find(i => i.id === id);
+            document.getElementById('modalItemTitle').innerText = selectedItem.name;
+            document.getElementById('creamOption').value = 'Estándar';
+            document.getElementById('itemNotes').value = '';
+            document.getElementById('customModal').classList.add('active');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('customModal').classList.remove('active');
+        };
+
+        window.confirmAddToCart = function() {
+            const cream = document.getElementById('creamOption').value;
+            const notes = document.getElementById('itemNotes').value.trim();
+            
+            let extraPrice = cream.includes('+Q5') ? 5 : 0;
+            let optionsText = cream !== 'Estándar' ? cream : '';
+            if (notes) optionsText += (optionsText ? ' | ' : '') + notes;
+
+            const fullName = optionsText ? `${selectedItem.name} (${optionsText})` : selectedItem.name;
+
+            cart.push({
+                id: Date.now(),
+                name: fullName,
+                price: selectedItem.price + extraPrice,
+                qty: 1
+            });
+
+            closeModal();
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            document.getElementById('cartTotal').innerText = `Q ${total.toFixed(2)}`;
+        }
+
+        window.sendOrderToPOS = async function() {
+            if (cart.length === 0) { alert('Añade al menos un producto a tu pedido antes de enviar.'); return; }
+
+            const tableRef = ref(db, `mesas_activas/${tableId}`);
+            const snapshot = await get(tableRef);
+            let currentData = snapshot.val() || { items: [] };
+
+            const updatedItems = [...(currentData.items || []), ...cart];
+            const startTime = currentData.startTime || new Date().toISOString();
+
+            await set(tableRef, {
+                items: updatedItems,
+                startTime: startTime
+            });
+
+            alert('¡Tu pedido ha sido enviado a la cocina! En breve lo recibirás en tu mesa.');
+            cart = [];
+            updateCartUI();
+        };
+
+        renderMenu();
+    </script>
+</body>
+</html>
