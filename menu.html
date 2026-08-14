@@ -12,18 +12,20 @@
         .logo { height: 38px; }
         .table-banner { background: #ff9800; color: #000; font-weight: 900; padding: 6px; font-size: 0.9rem; text-align: center; letter-spacing: 0.5px; }
 
-        .categories-bar { display: flex; gap: 8px; padding: 10px; overflow-x: auto; background: #181818; border-bottom: 1px solid #2a2a2a; position: sticky; top: 60px; z-index: 9; }
+        .categories-bar { display: flex; gap: 8px; padding: 10px; overflow-x: auto; background: #181818; border-bottom: 1px solid #2a2a2a; position: sticky; top: 58px; z-index: 9; }
         .cat-btn { background: #2a2a2a; color: #ccc; border: none; padding: 8px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; white-space: nowrap; }
         .cat-btn.active { background: #ff9800; color: #000; }
+        .cat-btn.season { background: #e91e63; color: #fff; }
+        .cat-btn.season.active { background: #ff4081; color: #fff; font-weight: 900; }
 
         .items-grid { padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
         .item-card { background: rgba(36, 36, 36, 0.9); border: 1px solid #333; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; }
+        .item-card.season-card { border: 1px solid #e91e63; }
         .item-title { font-weight: 700; font-size: 0.85rem; color: #fff; line-height: 1.2; }
         .item-desc { font-size: 0.65rem; color: #aaa; margin: 4px 0; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .item-price { color: #ff9800; font-weight: 900; font-size: 0.9rem; margin-top: 6px; }
         .btn-add { background: #ff9800; color: #000; border: none; padding: 6px; border-radius: 6px; font-weight: 800; width: 100%; margin-top: 6px; font-size: 0.8rem; cursor: pointer; }
 
-        /* Modal Personalización */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(4px); }
         .modal.active { display: flex; }
         .modal-content { background: #222; border-radius: 16px; padding: 16px; width: 100%; max-width: 400px; border: 1px solid #444; }
@@ -32,7 +34,6 @@
         .option-label { font-size: 0.8rem; font-weight: 700; color: #ccc; margin-bottom: 4px; display: block; }
         .option-select, .notes-input { width: 100%; padding: 8px; background: #111; color: #fff; border: 1px solid #444; border-radius: 8px; font-size: 0.85rem; outline: none; }
 
-        /* Floating Cart */
         .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1e1e1e; padding: 12px; border-top: 2px solid #ff9800; display: flex; justify-content: space-between; align-items: center; z-index: 20; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); }
         .btn-submit { background: #2e7d32; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
     </style>
@@ -44,6 +45,7 @@
 
     <div class="categories-bar">
         <button class="cat-btn active" onclick="filterCat('all')">Todos</button>
+        <button class="cat-btn season" onclick="filterCat('temporada')">🌟 De Temporada</button>
         <button class="cat-btn" onclick="filterCat('desayunos')">Desayunos</button>
         <button class="cat-btn" onclick="filterCat('saladas')">Saladas</button>
         <button class="cat-btn" onclick="filterCat('dulces')">Dulces</button>
@@ -52,23 +54,18 @@
 
     <div class="items-grid" id="itemsGrid"></div>
 
-    <!-- Modal Personalización de Opciones -->
     <div class="modal" id="customModal">
         <div class="modal-content">
             <div class="modal-title" id="modalItemTitle">Personaliza tu Orden</div>
             
-            <div class="option-group">
-                <label class="option-label">Opciones adicionales:</label>
-                <select class="option-select" id="creamOption">
-                    <option value="Estándar">Estándar</option>
-                    <option value="Extra Queso/Crema (+Q5)">Extra Queso (+Q5.00)</option>
-                    <option value="Sin Crema/Salsa">Sin Crema/Salsa</option>
-                </select>
+            <div class="option-group" id="optGroupContainer">
+                <label class="option-label">Opciones de la crepa / bebida:</label>
+                <select class="option-select" id="customOptionSelect"></select>
             </div>
 
             <div class="option-group">
-                <label class="option-label">Notas para cocina / Especificaciones:</label>
-                <input type="text" class="notes-input" id="itemNotes" placeholder="Ej: Poco dulce, bien tostado, sin cebolla...">
+                <label class="option-label">Notas adicionales para cocina:</label>
+                <input type="text" class="notes-input" id="itemNotes" placeholder="Ej: Poco dulce, bien tostado, sin hielo...">
             </div>
 
             <div style="display:flex; gap:8px; margin-top:14px;">
@@ -103,25 +100,52 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Capturar número de Mesa desde la URL (ej. ?mesa=1)
         const urlParams = new URLSearchParams(window.location.search);
         const tableId = parseInt(urlParams.get('mesa')) || 1;
         document.getElementById('tableBanner').innerText = `ORDENANDO PARA MESA ${tableId}`;
 
-        // LISTA COMPLETA DE LOS 37 PRODUCTOS DEL POS
+        const fruitOptions = [
+            { label: 'Sin fruta adicional (+Q0)', priceAdd: 0 },
+            { label: 'Con Banano (+Q5.00)', priceAdd: 5 },
+            { label: 'Con Fresa (+Q5.00)', priceAdd: 5 },
+            { label: 'Con Melocotón (+Q5.00)', priceAdd: 5 }
+        ];
+
         const menu = [
+            // TEMPORADA
+            { id: 101, cat: 'temporada', name: 'Crepa Cucurucho', desc: 'Nutella fresa + dulce típico a elección', price: 45, optionsObj: [
+                { label: 'Canillita de Leche', priceAdd: 0 },
+                { label: 'Cocada de Piña', priceAdd: 0 },
+                { label: 'Colocho de Guayaba', priceAdd: 0 }
+            ]},
+            { id: 102, cat: 'temporada', name: 'Crep Rose', desc: 'Betún de queso crema con jalea de fresa', price: 45 },
+            { id: 103, cat: 'temporada', name: 'Crepa Churrasquito', desc: 'Queso mozzarella, carne, cebolla caramelizada, chimichurri, aguacate + bebida', price: 75, optionsObj: [
+                { label: 'Con Coca-Cola', priceAdd: 0 },
+                { label: 'Con Cerveza', priceAdd: 0 }
+            ]},
+            { id: 104, cat: 'temporada', name: 'Crepa Lotus Biscoff', desc: 'Salsa Speculoos con helado de vainilla', price: 60, optionsObj: fruitOptions },
+            { id: 105, cat: 'temporada', name: 'Crepa Lemon Cookies', desc: 'Choc. blanco con limón, galleta y helado de vainilla', price: 55, optionsObj: fruitOptions },
+            { id: 106, cat: 'temporada', name: 'Crepa Raffaello', desc: 'Salsa choc. blanco y coco con helado de vainilla', price: 60, optionsObj: fruitOptions },
+            { id: 107, cat: 'temporada', name: 'Crepa Choco Coffee Crunch', desc: 'Chocolate con trozos de café y helado de vainilla', price: 55, optionsObj: fruitOptions },
+            { id: 108, cat: 'bebidas', name: 'Refresher de Maracuyá', desc: 'Hielo, pulpa de maracuyá, ginger ale, jugo de piña', price: 22 },
+
+            // DESAYUNOS
             { id: 1, cat: 'desayunos', name: 'Desayuno El Crepero', desc: '2 huevos, frijol, salsa, pan, chorizo, plátanos, crema, café', price: 45 },
             { id: 2, cat: 'desayunos', name: 'Bagel de Pavo y Fruta', desc: 'Ajonjolí/amapola, queso, jamón pavo, ranch, fruta, café', price: 42 },
             { id: 3, cat: 'desayunos', name: 'Toast Tocino y Yogurt', desc: 'Pan artesanal, aguacate, tocino, yogurt, fruta, nueces, café', price: 40 },
             { id: 4, cat: 'desayunos', name: 'Toast Huevo y Fruta', desc: 'Queso crema, tomate, jamón, huevo, fruta, café', price: 40 },
             { id: 5, cat: 'desayunos', name: 'Panqueques con Nutella', desc: '3 panqueques con Nutella, fresa, banano y café', price: 38 },
             { id: 6, cat: 'desayunos', name: 'Waffles con Fruta', desc: '3 waffles con Nutella, fresa, banano y café', price: 40 },
+
+            // SALADAS
             { id: 7, cat: 'saladas', name: 'Crepa Jamón y Queso', desc: 'Jamón de pavo y queso mozzarella', price: 44 },
             { id: 8, cat: 'saladas', name: 'Crepa Pesto y Queso', desc: 'Salsa pesto, parmesano, piñones, mozzarella', price: 45 },
             { id: 9, cat: 'saladas', name: 'Crepa Pollo y Pesto', desc: 'Pollo, salsa pesto, parmesano, piñones, mozzarella', price: 50 },
             { id: 10, cat: 'saladas', name: 'Crepa Margarita', desc: 'Salsa artesanal, mozzarella, tomate manzano, albahaca', price: 48 },
             { id: 11, cat: 'saladas', name: 'Crepa Chorizo y Queso', desc: 'Chorizo argentino premium y mozzarella', price: 49 },
             { id: 12, cat: 'saladas', name: 'Crepizza Jam', desc: 'Salsa artesanal, mozzarella, jamón de pavo', price: 48 },
+
+            // DULCES
             { id: 13, cat: 'dulces', name: 'Nutella Lover', desc: 'Nutella pura', price: 34 },
             { id: 14, cat: 'dulces', name: 'Nutella Banano', desc: 'Nutella y banano', price: 35 },
             { id: 15, cat: 'dulces', name: 'Nutella Fresa', desc: 'Nutella y fresa', price: 37 },
@@ -139,13 +163,15 @@
             { id: 27, cat: 'dulces', name: 'Dulce de Leche Mixta', desc: 'Dulce de leche, banano, fresa y melocotón', price: 43 },
             { id: 28, cat: 'dulces', name: 'Strawberry Cream', desc: 'Mermelada de fresa y queso crema', price: 40 },
             { id: 29, cat: 'dulces', name: 'Colombianita', desc: 'Nutella y queso mozzarella', price: 40 },
-            { id: 30, cat: 'bebidas', name: 'Café Negro', desc: 'Caliente', price: 10 },
-            { id: 31, cat: 'bebidas', name: 'Café con Leche', desc: 'Caliente', price: 15 },
+
+            // BEBIDAS
+            { id: 30, cat: 'bebidas', name: 'Café Negro', desc: 'Caliente', price: 10, options: ['Leche entera', 'Leche descremada'] },
+            { id: 31, cat: 'bebidas', name: 'Café con Leche', desc: 'Caliente', price: 15, options: ['Entera', 'Descremada'] },
             { id: 32, cat: 'bebidas', name: 'Coffee Ice', desc: 'Frío', price: 25 },
             { id: 33, cat: 'bebidas', name: 'Copa de Vino', desc: 'Tinto/Blanco', price: 20 },
             { id: 34, cat: 'bebidas', name: 'Té de la Casa', desc: 'Infusión', price: 12 },
             { id: 35, cat: 'bebidas', name: 'Coca Cola', desc: 'Lata/Botella', price: 12 },
-            { id: 36, cat: 'bebidas', name: 'Jamaica', desc: 'Bebida fría', price: 15 },
+            { id: 36, cat: 'bebidas', name: 'Jamaica', desc: 'Bebida fría', price: 15, options: ['Con azúcar', 'Sin azúcar'] },
             { id: 37, cat: 'bebidas', name: 'Cerveza Moza', desc: 'Cerveza', price: 18 }
         ];
 
@@ -160,7 +186,7 @@
             
             filtered.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'item-card';
+                card.className = `item-card ${item.cat === 'temporada' ? 'season-card' : ''}`;
                 card.innerHTML = `
                     <div>
                         <div class="item-title">${item.name}</div>
@@ -185,8 +211,21 @@
         window.openModal = function(id) {
             selectedItem = menu.find(i => i.id === id);
             document.getElementById('modalItemTitle').innerText = selectedItem.name;
-            document.getElementById('creamOption').value = 'Estándar';
             document.getElementById('itemNotes').value = '';
+
+            const container = document.getElementById('optGroupContainer');
+            const select = document.getElementById('customOptionSelect');
+
+            if (selectedItem.optionsObj && selectedItem.optionsObj.length > 0) {
+                container.style.display = 'block';
+                select.innerHTML = selectedItem.optionsObj.map((opt, idx) => `<option value="${idx}">${opt.label}</option>`).join('');
+            } else if (selectedItem.options && selectedItem.options.length > 0) {
+                container.style.display = 'block';
+                select.innerHTML = selectedItem.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+            } else {
+                container.style.display = 'none';
+            }
+
             document.getElementById('customModal').classList.add('active');
         };
 
@@ -195,11 +234,20 @@
         };
 
         window.confirmAddToCart = function() {
-            const cream = document.getElementById('creamOption').value;
+            const select = document.getElementById('customOptionSelect');
             const notes = document.getElementById('itemNotes').value.trim();
             
-            let extraPrice = cream.includes('+Q5') ? 5 : 0;
-            let optionsText = cream !== 'Estándar' ? cream : '';
+            let finalPrice = selectedItem.price;
+            let optionsText = '';
+
+            if (selectedItem.optionsObj && selectedItem.optionsObj.length > 0) {
+                const optObj = selectedItem.optionsObj[select.value];
+                finalPrice += optObj.priceAdd;
+                optionsText = optObj.label;
+            } else if (selectedItem.options && selectedItem.options.length > 0) {
+                optionsText = select.value;
+            }
+
             if (notes) optionsText += (optionsText ? ' | ' : '') + notes;
 
             const fullName = optionsText ? `${selectedItem.name} (${optionsText})` : selectedItem.name;
@@ -207,7 +255,7 @@
             cart.push({
                 id: Date.now(),
                 name: fullName,
-                price: selectedItem.price + extraPrice,
+                price: finalPrice,
                 qty: 1
             });
 
