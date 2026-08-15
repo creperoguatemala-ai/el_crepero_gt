@@ -171,35 +171,7 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDlU2dB12caXrez3UXj0v4ojl893_sDWK8",
-            authDomain: "elcrepero-1752a.firebaseapp.com",
-            databaseURL: "https://elcrepero-1752a-default-rtdb.firebaseio.com",
-            projectId: "elcrepero-1752a",
-            storageBucket: "elcrepero-1752a.firebasestorage.app",
-            messagingSenderId: "327079955432",
-            appId: "1:327079955432:web:49e17e765625b70fdcf25d"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const tableId = parseInt(urlParams.get('mesa')) || 1;
-        document.getElementById('tableBanner').innerText = `ORDENANDO PARA MESA ${tableId}`;
-
-        // ... (Tu menú original) ...
-        const menu = [ /* ... tu array de productos original ... */ ];
-
-        let cart = [];
-        let selectedItem = null;
-        let currentCat = 'all';
-
-        // Lógica original de renderizado, carrito y Firebase
-        // ... (Tu JS funcional sin la parte de puntos) ...
+        // ... (Tu código JS original va aquí) ...
     </script>
 </body>
 </html>
