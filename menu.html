@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Menú Digital - El Crepero</title>
+    <title>Menú Digital - El Crepero Win11</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
 
@@ -75,7 +75,6 @@
             justify-content: space-between; 
             min-height: 155px; 
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03); 
-            cursor: pointer;
         }
         .item-card.season-card { border-color: #f8939c; background: #fff9f9; }
         
@@ -85,7 +84,7 @@
         .btn-add { background: #0078d4; color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: 700; width: 100%; margin-top: 8px; font-size: 0.88rem; cursor: pointer; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.3); transition: 0.15s; }
         .btn-add:hover { background: #106ebe; }
 
-        /* MODAL */
+        /* MODAL Win11 Flyout */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 100; justify-content: center; align-items: flex-end; backdrop-filter: blur(5px); }
         .modal.active { display: flex; }
         .modal-content { 
@@ -96,7 +95,9 @@
             width: 100%; 
             max-width: 600px; 
             box-shadow: 0 -10px 30px rgba(0,0,0,0.15); 
+            animation: slideUp 0.2s ease; 
         }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
         .modal-title { font-size: 1.15rem; font-weight: 700; color: #1b1b1b; margin-bottom: 16px; text-align: center; }
         .option-group { margin-bottom: 16px; }
@@ -107,18 +108,49 @@
         .modal-btn-cancel { flex: 1; padding: 10px; background: #f3f2f1; color: #323130; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
         .modal-btn-confirm { flex: 2; padding: 10px; background: #0078d4; color: #fff; border: none; border-radius: 6px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.3); cursor: pointer; }
 
-        /* BARRA CARRITO */
-        .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); padding: 14px 18px; border-top: 1px solid rgba(0, 0, 0, 0.08); display: flex; justify-content: space-between; align-items: center; z-index: 20; box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06); }
+        /* BARRA INFERIOR DE CARRITO */
+        .cart-bar { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(20px); 
+            padding: 14px 18px; 
+            border-top: 1px solid rgba(0, 0, 0, 0.08); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            z-index: 20; 
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06); 
+        }
         .cart-info { display: flex; flex-direction: column; cursor: pointer; }
-        .cart-label { font-size: 0.7rem; font-weight: 600; color: #605e5c; text-transform: uppercase; }
+        .cart-label { font-size: 0.7rem; font-weight: 600; color: #605e5c; text-transform: uppercase; letter-spacing: 0.5px; }
         .cart-total { font-size: 1.4rem; font-weight: 700; color: #d83b01; line-height: 1; margin-top: 2px; }
-        .btn-submit { background: #107c41; color: #fff; border: none; padding: 12px 22px; border-radius: 6px; font-weight: 700; font-size: 0.95rem; cursor: pointer; box-shadow: 0 2px 8px rgba(16, 124, 65, 0.3); }
+        .btn-submit { background: #107c41; color: #fff; border: none; padding: 12px 22px; border-radius: 6px; font-weight: 700; font-size: 0.95rem; cursor: pointer; box-shadow: 0 2px 8px rgba(16, 124, 65, 0.3); transition: 0.15s; }
+        .btn-submit:hover { background: #0e703b; }
 
+        /* MODAL DE RESUMEN DE CARRITO */
         .cart-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 110; justify-content: center; align-items: flex-end; backdrop-filter: blur(5px); }
         .cart-modal.active { display: flex; }
-        .cart-modal-content { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.15); border-radius: 12px 12px 0 0; padding: 22px 18px; width: 100%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; }
+        .cart-modal-content { 
+            background: #ffffff; 
+            border: 1px solid rgba(0, 0, 0, 0.15); 
+            border-radius: 12px 12px 0 0; 
+            padding: 22px 18px; 
+            width: 100%; 
+            max-width: 600px; 
+            max-height: 80vh; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.15); 
+        }
         .cart-items-list { flex: 1; overflow-y: auto; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
         .cart-row { background: #ffffff; border: 1px solid rgba(0,0,0,0.06); padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #0078d4; }
+        .cart-row-info { flex: 1; }
+        .cart-row-title { font-weight: 600; font-size: 0.88rem; color: #1b1b1b; }
+        .cart-row-price { font-weight: 500; font-size: 0.75rem; color: #605e5c; margin-top: 2px; }
+        .cart-row-controls { display: flex; align-items: center; gap: 6px; }
     </style>
 </head>
 <body>
@@ -137,7 +169,6 @@
 
     <div class="items-grid" id="itemsGrid"></div>
 
-    <!-- MODAL OPCIONES DE PRODUCTO -->
     <div class="modal" id="customModal">
         <div class="modal-content">
             <div class="modal-title" id="modalItemTitle">Prepara tu Orden</div>
@@ -156,7 +187,6 @@
         </div>
     </div>
 
-    <!-- MODAL CARRITO -->
     <div class="cart-modal" id="cartModal">
         <div class="cart-modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -168,7 +198,6 @@
         </div>
     </div>
 
-    <!-- BARRA INFERIOR -->
     <div class="cart-bar">
         <div class="cart-info" onclick="toggleCartModal()">
             <span class="cart-label">Ver Pedido (<span id="cartCount">0</span> items) 🛒</span>
@@ -194,16 +223,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- DETECCIÓN DE MESA CORREGIDA ---
         const urlParams = new URLSearchParams(window.location.search);
-        const mesaParam = urlParams.get('mesa');
-        const tableId = mesaParam ? parseInt(mesaParam) : 1;
-
-        if (tableId) {
-            document.getElementById('tableBanner').innerText = `ORDENANDO PARA MESA ${tableId}`;
-        } else {
-            document.getElementById('tableBanner').innerText = "ORDENANDO PARA MESA 1";
-        }
+        const tableId = parseInt(urlParams.get('mesa')) || 1;
+        document.getElementById('tableBanner').innerText = `ORDENANDO PARA MESA ${tableId}`;
 
         const fruitOptions = [
             { label: 'Sin fruta extra (+Q0)', priceAdd: 0 },
@@ -364,21 +386,23 @@
                 const row = document.createElement('div');
                 row.className = 'cart-row';
                 row.innerHTML = `
-                    <div style="flex:1;">
-                        <div style="font-weight:600; font-size:0.88rem;">${item.name}</div>
-                        <div style="font-size:0.75rem; color:#605e5c;">Q ${item.price.toFixed(2)} c/u</div>
+                    <div class="cart-row-info">
+                        <div class="cart-row-title">${item.name}</div>
+                        <div class="cart-row-price">Q ${item.price.toFixed(2)} c/u</div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button onclick="updateCartQty('${item.name}', -1)" style="width:24px; height:24px; border-radius:4px; border:1px solid rgba(0,0,0,0.12); background:#fff; font-weight:700;">-</button>
-                        <span style="font-weight:700; min-width:16px; text-align:center;">${item.qty}</span>
-                        <button onclick="updateCartQty('${item.name}', 1)" style="width:24px; height:24px; border-radius:4px; border:1px solid rgba(0,0,0,0.12); background:#fff; font-weight:700;">+</button>
+                    <div class="cart-row-controls">
+                        <button onclick="updateCartQty('${item.name}', -1)" style="width:24px; height:24px; border-radius:4px; border:1px solid rgba(0,0,0,0.12); background:#ffffff; color:#1b1b1b; font-weight:700;">-</button>
+                        <span style="font-weight:700; min-width:16px; text-align:center; color:#1b1b1b;">${item.qty}</span>
+                        <button onclick="updateCartQty('${item.name}', 1)" style="width:24px; height:24px; border-radius:4px; border:1px solid rgba(0,0,0,0.12); background:#ffffff; color:#1b1b1b; font-weight:700;">+</button>
                     </div>
                 `;
                 list.appendChild(row);
             });
         }
 
-        window.toggleCartModal = function() { document.getElementById('cartModal').classList.toggle('active'); };
+        window.toggleCartModal = function() {
+            document.getElementById('cartModal').classList.toggle('active');
+        };
 
         window.sendOrderToPOS = async function() {
             if (cart.length === 0) { alert('Tu carrito está vacío.'); return; }
@@ -390,7 +414,7 @@
             const updatedItems = [...(currentData.items || []), ...cart];
             await set(tableRef, { items: updatedItems, startTime: currentData.startTime || new Date().toISOString() });
 
-            alert(`¡Pedido enviado a cocina para la Mesa ${tableId}! 🚀`);
+            alert('¡Tu pedido ha sido enviado a la cocina con éxito!');
             cart = [];
             toggleCartModal();
             updateCartUI();
